@@ -1,0 +1,8 @@
+1 - Acessar o site 'https://www.google.com/finance/quote/USD-BRL?window=1M'
+2 - Coletar o valor do dolar no momento
+3 - Coletar a data da cotação
+4 - Coletar o site da cotação
+5 - Coletar um print da cotação (gráfico)
+6 - Organizar e armazenar os dados em um arquivo word
+7 - Converter para pdf
+8 - Entregar como um executável
