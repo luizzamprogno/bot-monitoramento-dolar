@@ -10,11 +10,13 @@ from selenium.common.exceptions import *
 from selenium.webdriver.support import expected_conditions as EC
 from datetime import date
 from info import *
-from docx import Document
+from docx import Document as word
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+from spire.doc import *
+from spire.doc.common import *
 
 def iniciar_driver():
     try:
@@ -114,12 +116,10 @@ def add_hyperlink(paragraph, url, text):
     return paragraph
 
 def write_doc_content(current_usd, current_date, url):
-    document = Document()
+    document = word()
 
-    heading = f'Cotação atual do dolar R${current_usd}\n{current_date}'
-    content = f'O dólar está no valor de R${current_usd}, na data {current_date}\n.'
-    print_text = f'Print da cotação atual:'
-    autor = 'Luiz Zamprogno'
+    heading = HEADING.format(current_usd, current_date)
+    content = CONTENT.format(current_usd, current_date)
 
     heading_paragraph = document.add_heading(heading, level=0)
     heading_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -128,10 +128,17 @@ def write_doc_content(current_usd, current_date, url):
 
     add_hyperlink(paragrafo, url, 'Clique aqui para ver a cotação atual')
 
-    document.add_paragraph(print_text)
+    document.add_paragraph(PRINT_TEXT)
     document.add_picture('./cotacao.png', width=Inches(6), height=Inches(3.5))
-    document.add_paragraph(autor)
+    document.add_paragraph(AUTOR)
     document.save('Cotação atual do dolar.docx')
+
+def convert_pdf():
+
+    pdf_document = Document()
+    pdf_document.LoadFromFile('.\Cotação atual do dolar.docx')
+    pdf_document.SaveToFile('.\Cotação atual do dolar.pdf', FileFormat.PDF)
+    pdf_document.Close()
 
 def main():
     driver, wait = open_url(url)
@@ -139,6 +146,7 @@ def main():
     current_date = get_current_date(date)
     save_screenshot(driver)
     write_doc_content(current_usd_float, current_date, url)
+    convert_pdf()
 
 if __name__ == '__main__':
     main()
