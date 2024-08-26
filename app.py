@@ -12,6 +12,9 @@ from datetime import date
 from info import *
 from docx import Document
 from docx.shared import Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 def iniciar_driver():
     try:
@@ -77,21 +80,57 @@ def get_current_date(date):
 def save_screenshot(driver):
     driver.save_screenshot('cotacao.png')
 
+def add_hyperlink(paragraph, url, text):
+    # Cria um relacionamento para o hyperlink
+    part = paragraph.part
+    r_id = part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
+
+    # Cria o elemento de hyperlink
+    hyperlink = OxmlElement('w:hyperlink')
+    hyperlink.set(qn('r:id'), r_id)
+
+    # Cria um novo run para o texto do hyperlink
+    run = OxmlElement('w:r')
+    rPr = OxmlElement('w:rPr')
+
+    # Define a cor do hyperlink
+    color = OxmlElement('w:color')
+    color.set(qn('w:val'), '0000FF')
+    rPr.append(color)
+
+    # Define o sublinhado do hyperlink
+    u = OxmlElement('w:u')
+    u.set(qn('w:val'), 'single')
+    rPr.append(u)
+
+    run.append(rPr)
+    text_element = OxmlElement('w:t')
+    text_element.text = text
+    run.append(text_element)
+
+    hyperlink.append(run)
+    paragraph._p.append(hyperlink)
+
+    return paragraph
+
 def write_doc_content(current_usd, current_date, url):
-    heading = f'Cotação atual do dolar R${current_usd} - {current_date}'
-    content = f'''
-    O dólar está no valor de R${current_usd}, na data {current_date}.
-    Valor cotado no {url}
-    Print da cotação atual:
-    '''
-
-    return heading, content
-
-def create_doc(heading, content):
     document = Document()
-    document.add_heading(heading, level=0)
+
+    heading = f'Cotação atual do dolar R${current_usd}\n{current_date}'
+    content = f'O dólar está no valor de R${current_usd}, na data {current_date}\n.'
+    print_text = f'Print da cotação atual:'
+    autor = 'Luiz Zamprogno'
+
+    heading_paragraph = document.add_heading(heading, level=0)
+    heading_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
     paragrafo = document.add_paragraph(content)
+
+    add_hyperlink(paragrafo, url, 'Clique aqui para ver a cotação atual')
+
+    document.add_paragraph(print_text)
     document.add_picture('./cotacao.png', width=Inches(6), height=Inches(3.5))
+    document.add_paragraph(autor)
     document.save('Cotação atual do dolar.docx')
 
 def main():
@@ -99,8 +138,7 @@ def main():
     current_usd_float = colect_usd(current_usd_xpath, wait)
     current_date = get_current_date(date)
     save_screenshot(driver)
-    heading, content = write_doc_content(current_usd_float, current_date, url)
-    create_doc(heading, content)
+    write_doc_content(current_usd_float, current_date, url)
 
 if __name__ == '__main__':
     main()
